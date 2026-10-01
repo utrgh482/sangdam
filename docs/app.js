@@ -8,7 +8,7 @@
  * ===================================================================== */
 (function(){
 'use strict';
-const APP_VER='v1.0.1 (2026-10-01)';
+const APP_VER='v1.0.2 (2026-10-01)';
 const q=(s,r)=>(r||document).querySelector(s), qa=(s,r)=>[...(r||document).querySelectorAll(s)];
 const E=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const CR=globalThis.ISDCRYPT, ST=window.STORE;
@@ -108,21 +108,26 @@ function rowHTML(c,sel){ const f=farmOf(c.fid), p=prog(c), n=photosOf(c).length,
     <span class="fm">${f?E(f.name):'<span class="faint">농가 없음</span>'}${f&&f.addr?`<small>${E(f.addr)}</small>`:''}${c.crop?`<small>· ${E(c.crop)}</small>`:''}</span>
     <span class="iss">${E(c.issue)||'<span style="opacity:.6">고민 요약 없음</span>'}</span>
     <div class="foot">${c.tags.map(t=>{const x=tagOf(t);return `<span class="stag ${x&&x.end?'end':''}">${E(t)}</span>`;}).join('')}<span class="dots"><span class="${p.pre?'d':''}">사전</span><span class="${p.visit?'d':''}">답사</span><span class="${p.refs?'d':''}">자료${p.refs?' '+p.refs:''}</span><span class="${p.follow?'d':''}">후속</span></span><span class="clip">📎${n}</span></div></div>`; }
-function drawList(){ const pg=q('#page-list'); const L=filteredConsults(); const act=L.filter(c=>!isEnd(c)).sort(byDate), end=L.filter(isEnd).sort(byDate); const nOpen=DB.consults.filter(c=>!isEnd(c)).length; const cnt=n=>DB.consults.filter(c=>c.tags.includes(n)).length; const due=dueItems(); const sel=VIEW.v==='detail'?VIEW.id:null;
-  const focusQ=document.activeElement&&document.activeElement.id==='lq'; const selPos=focusQ?[document.activeElement.selectionStart,document.activeElement.selectionEnd]:null;
-  pg.innerHTML=`<div class="srch"><input id="lq" placeholder="농가 · 제목 · 내용으로 찾기" value="${E(LV.q)}" autocomplete="off">${LV.q?'<button type="button" class="btn" id="lqx">지우기</button>':''}</div>
-    <div class="chips"><button type="button" class="chip ${!LV.tag?'on':''}" data-ctag="">전부 ${DB.consults.length}</button><button type="button" class="chip ${LV.tag==='__open'?'on':''}" data-ctag="__open">진행중 ${nOpen}</button>${DB.tags.map(t=>`<button type="button" class="chip ${LV.tag===t.n?'on':''}" data-ctag="${E(t.n)}">${E(t.n)} ${cnt(t.n)}</button>`).join('')}</div>
-    ${due.length&&!LV.q&&!LV.tag?`<div class="due"><b class="t">다시 볼 날</b>${due.map(c=>{ const f=farmOf(c.fid), late=c.follow.next<today(), isT=c.follow.next===today(); return `<div class="it" data-open="${c.id}"><span class="d ${late?'late':''}">${late?'지남':isT?'오늘':md(c.follow.next).replace(/^0/,'').replace('.0','.')}</span><span>${f?E(f.name)+' · ':''}${E(c.title)||'(제목 없음)'}${c.follow.memo.trim()?' — '+E(c.follow.memo.trim().split('\n')[0].slice(0,40)):''}</span></div>`; }).join('')}</div>`:''}
+function listBodyHTML(){ const L=filteredConsults(); const act=L.filter(c=>!isEnd(c)).sort(byDate), end=L.filter(isEnd).sort(byDate); const due=dueItems(); const sel=VIEW.v==='detail'?VIEW.id:null;
+  return `${due.length&&!LV.q&&!LV.tag?`<div class="due"><b class="t">다시 볼 날</b>${due.map(c=>{ const f=farmOf(c.fid), late=c.follow.next<today(), isT=c.follow.next===today(); return `<div class="it" data-open="${c.id}"><span class="d ${late?'late':''}">${late?'지남':isT?'오늘':md(c.follow.next).replace(/^0/,'').replace('.0','.')}</span><span>${f?E(f.name)+' · ':''}${E(c.title)||'(제목 없음)'}${c.follow.memo.trim()?' — '+E(c.follow.memo.trim().split('\n')[0].slice(0,40)):''}</span></div>`; }).join('')}</div>`:''}
+    ${DB.consults.length?`<div class="nlist">${act.map(c=>rowHTML(c,c.id===sel)).join('')}${end.length?`<div class="divider">끝난 상담 ${end.length}</div>${end.map(c=>rowHTML(c,c.id===sel)).join('')}`:''}${!act.length&&!end.length?'<div class="empty">조건에 맞는 상담이 없습니다.</div>':''}</div>`:'<div class="empty">아직 상담이 없습니다.<br>[+ 새 상담]으로 첫 상담을 적어 보세요.</div>'}`; }
+function chipsHTML(){ const nOpen=DB.consults.filter(c=>!isEnd(c)).length; const cnt=n=>DB.consults.filter(c=>c.tags.includes(n)).length;
+  return `<button type="button" class="chip ${!LV.tag?'on':''}" data-ctag="">전부 ${DB.consults.length}</button><button type="button" class="chip ${LV.tag==='__open'?'on':''}" data-ctag="__open">진행중 ${nOpen}</button>${DB.tags.map(t=>`<button type="button" class="chip ${LV.tag===t.n?'on':''}" data-ctag="${E(t.n)}">${E(t.n)} ${cnt(t.n)}</button>`).join('')}`; }
+/* 글자를 치는 동안에는 찾기 칸을 절대 새로 만들지 않습니다 (새로 만들면 커서가 날아가고 핸드폰 자판이 깜빡임) — 목록 부분(#lbody)만 바꿉니다 */
+function drawListBody(){ const pg=q('#page-list'); const b=q('#lbody',pg); if(!b){ drawList(); return; } b.innerHTML=listBodyHTML(); const ch=q('#lchips',pg); if(ch) ch.innerHTML=chipsHTML(); const x=q('#lqx',pg); if(x) x.hidden=!LV.q; }
+function drawList(){ const pg=q('#page-list');
+  if(q('#lbody',pg)&&document.activeElement&&document.activeElement.id==='lq'){ drawListBody(); return; }   /* 찾기 칸에 커서가 있으면 틀은 두고 속만 */
+  pg.innerHTML=`<div class="srch"><input id="lq" placeholder="농가 · 제목 · 내용으로 찾기" value="${E(LV.q)}" autocomplete="off"><button type="button" class="btn" id="lqx" ${LV.q?'':'hidden'}>지우기</button></div>
+    <div class="chips" id="lchips">${chipsHTML()}</div>
     <button type="button" class="fab phoneonly" id="newC">+ 새 상담</button>
-    ${DB.consults.length?`<div class="nlist">${act.map(c=>rowHTML(c,c.id===sel)).join('')}${end.length?`<div class="divider">끝난 상담 ${end.length}</div>${end.map(c=>rowHTML(c,c.id===sel)).join('')}`:''}${!act.length&&!end.length?'<div class="empty">조건에 맞는 상담이 없습니다.</div>':''}</div>`:'<div class="empty">아직 상담이 없습니다.<br>[+ 새 상담]으로 첫 상담을 적어 보세요.</div>'}`;
-  if(isPC()){ const fab=q('#newC',pg); fab.classList.remove('phoneonly'); pg.insertBefore(fab,pg.querySelector('.nlist')||null); }
-  if(focusQ){ const i=q('#lq',pg); i.focus(); try{ i.setSelectionRange(selPos[0],selPos[1]); }catch(e){} }
+    <div id="lbody">${listBodyHTML()}</div>`;
+  if(isPC()){ const fab=q('#newC',pg); fab.classList.remove('phoneonly'); pg.insertBefore(fab,q('#lbody',pg)); }
 }
-q('#page-list').addEventListener('input',e=>{ if(e.target.id==='lq'){ LV.q=e.target.value; clearTimeout(window.__lq); window.__lq=setTimeout(drawList,180); } });
+q('#page-list').addEventListener('input',e=>{ if(e.target.id==='lq'){ LV.q=e.target.value; clearTimeout(window.__lq); window.__lq=setTimeout(drawListBody,150); } });
 q('#page-list').addEventListener('click',e=>{ const t=e.target;
-  if(t.id==='lqx'){ LV.q=''; drawList(); return; }
+  if(t.id==='lqx'){ LV.q=''; const i=q('#lq'); if(i) i.value=''; drawListBody(); return; }
   if(t.id==='newC'){ newConsult(null); return; }
-  const ch=t.closest('[data-ctag]'); if(ch){ LV.tag=ch.dataset.ctag; drawList(); return; }
+  const ch=t.closest('[data-ctag]'); if(ch){ LV.tag=ch.dataset.ctag; drawListBody(); return; }
   const op=t.closest('[data-open]'); if(op){ go('detail',op.dataset.open); return; } });
 function newConsult(fid){ const c=mkConsult({fid:fid||null,date:today()}); DB.consults.push(c); save(); go('detail',c.id); setTimeout(()=>{ const i=q('#page-detail .ttlin'); if(i) i.focus(); },50); }
 function dropEmpty(id){ const c=consultOf(id); if(c&&isEmptyConsult(c)){ DB.consults=DB.consults.filter(x=>x!==c); save(); } }   /* 아무것도 안 적은 새 상담은 나가면 지움 (장부에 안 남김) */
@@ -174,11 +179,14 @@ async function deleteConsult(id){ const c=consultOf(id); if(!c) return; for(cons
 
 /* 농가 고르기 창 (상담에서) */
 function pickFarm(c){ let step=1, qv='', draft=null;
-  const paint=()=>{ const s=qv.trim().toLowerCase(); const L=DB.farms.filter(f=>!s||[f.name,f.addr,f.crop,f.tel].join(' ').toLowerCase().includes(s)).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  const listHTML=()=>{ const s=qv.trim().toLowerCase(); const L=DB.farms.filter(f=>!s||[f.name,f.addr,f.crop,f.tel].join(' ').toLowerCase().includes(s)).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    return L.map(f=>`<button type="button" data-pick="${f.id}"><b>${E(f.name)}</b><small>${[f.addr,f.crop].filter(Boolean).map(E).join(' · ')}</small>${f.tel?`<small>📞 ${E(f.tel)}</small>`:''}</button>`).join('')||'<div class="empty" style="padding:14px">'+(s?'찾는 농가가 없습니다.':'아직 농가가 없습니다.')+'</div>'; };
+  const newLabel=()=>`+ 새 농가${qv.trim()?` "${E(qv.trim())}"`:''}`;
+  const paint=()=>{
     if(step===1) modal(`<h1>농가 고르기</h1><p class="desc">상담한 농가를 고르거나 새로 만듭니다. 전화번호·주소는 농가 카드에 한 번만 적어 두면 그 농가의 모든 상담에 보입니다.</p>
       <input id="pf-q" placeholder="이름 · 마을 · 작목으로 찾기" value="${E(qv)}" autocomplete="off">
-      <div class="plist">${L.map(f=>`<button type="button" data-pick="${f.id}"><b>${E(f.name)}</b><small>${[f.addr,f.crop].filter(Boolean).map(E).join(' · ')}</small>${f.tel?`<small>📞 ${E(f.tel)}</small>`:''}</button>`).join('')||'<div class="empty" style="padding:14px">'+(s?'찾는 농가가 없습니다.':'아직 농가가 없습니다.')+'</div>'}</div>
-      <div class="acts"><button type="button" class="btn primary" id="pf-new">+ 새 농가${qv.trim()?` "${E(qv.trim())}"`:''}</button>${c.fid?'<button type="button" class="btn ghost" id="pf-unlink">농가 떼기</button>':''}<span class="sp"></span><button type="button" class="btn" data-close>닫기</button></div>`,{onOpen:w=>{ const i=q('#pf-q',w); i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} }});
+      <div class="plist" id="pf-list">${listHTML()}</div>
+      <div class="acts"><button type="button" class="btn primary" id="pf-new">${newLabel()}</button>${c.fid?'<button type="button" class="btn ghost" id="pf-unlink">농가 떼기</button>':''}<span class="sp"></span><button type="button" class="btn" data-close>닫기</button></div>`,{onOpen:w=>{ const i=q('#pf-q',w); i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} }});
     else modal(`<h1>새 농가</h1><p class="desc">이름만 있어도 됩니다. 나머지는 나중에 농가 카드에서 채울 수 있어요.</p>
       <label class="fld">이름<input id="nf-name" value="${E(draft.name)}" maxlength="60"></label><label class="fld">전화번호<input id="nf-tel" value="${E(draft.tel)}" inputmode="tel" maxlength="40" placeholder="전화번호"></label>
       <label class="fld">마을 · 주소<input id="nf-addr" value="${E(draft.addr)}" maxlength="200" placeholder="예: 흥천면 효지리"></label><label class="fld">주로 짓는 작목<input id="nf-crop" value="${E(draft.crop)}" maxlength="100" placeholder="예: 배, 고추"></label>
@@ -188,21 +196,24 @@ function pickFarm(c){ let step=1, qv='', draft=null;
     if(t.id==='pf-unlink'){ c.fid=null; touch(c); save(); closeModal(); drawDetail(); if(isPC()) drawList(); return; }
     if(t.id==='nf-back'){ step=1; paint(); return; }
     if(t.id==='nf-save'){ const name=q('#nf-name',w).value.trim(); if(!name){ q('#nf-name',w).focus(); return; } const f=mkFarm({name,tel:q('#nf-tel',w).value.trim(),addr:q('#nf-addr',w).value.trim(),crop:q('#nf-crop',w).value.trim()}); DB.farms.push(f); c.fid=f.id; touch(c); save(); closeModal(); drawDetail(); if(isPC()){ drawList(); } return; } };
-  w.oninput=e=>{ if(e.target.id==='pf-q'){ qv=e.target.value; paint(); } };
+  /* 글자를 칠 때는 창을 다시 만들지 않고 목록과 단추 글자만 바꿉니다 (창을 다시 만들면 커서가 날아가 자판이 깜빡임) */
+  w.oninput=e=>{ if(e.target.id==='pf-q'){ qv=e.target.value; const l=q('#pf-list',w); if(l) l.innerHTML=listHTML(); const nb=q('#pf-new',w); if(nb) nb.innerHTML=newLabel(); } };
   paint(); }
 
 /* ---------- 농가 ---------- */
 function farmStat(f){ const L=consultsOfFarm(f); const last=L[0]; const open=L.filter(c=>!isEnd(c)); const due=open.filter(c=>c.follow.next).sort((a,b)=>a.follow.next<b.follow.next?-1:1)[0]; return {n:L.length,last:last?last.date:'',due:due?due.follow.next:''}; }
-function drawFarms(){ const pg=q('#page-farms'); const s=FV.q.trim().toLowerCase(); const L=DB.farms.filter(f=>!s||[f.name,f.addr,f.crop,f.tel,f.memo].join(' ').toLowerCase().includes(s)).sort((a,b)=>{ const sa=farmStat(a), sb=farmStat(b); return (sb.last>sa.last?1:sb.last<sa.last?-1:0)||a.name.localeCompare(b.name,'ko'); }); const sel=VIEW.v==='farm'?VIEW.id:null;
-  const focusQ=document.activeElement&&document.activeElement.id==='fq';
+function farmsBodyHTML(){ const s=FV.q.trim().toLowerCase(); const L=DB.farms.filter(f=>!s||[f.name,f.addr,f.crop,f.tel,f.memo].join(' ').toLowerCase().includes(s)).sort((a,b)=>{ const sa=farmStat(a), sb=farmStat(b); return (sb.last>sa.last?1:sb.last<sa.last?-1:0)||a.name.localeCompare(b.name,'ko'); }); const sel=VIEW.v==='farm'?VIEW.id:null;
+  return DB.farms.length?`<div class="nlist">${L.map(f=>{ const st=farmStat(f); const late=st.due&&st.due<today(), isT=st.due===today(); return `<div class="frow ${f.id===sel?'sel':''}" data-farm="${f.id}"><span class="nm">${E(f.name)}<small>${[f.addr,f.crop].filter(Boolean).map(E).join(' · ')}</small></span>${f.tel?`<a class="callbtn" href="tel:${E(f.tel.replace(/[^0-9+]/g,''))}" data-call>📞 전화</a>`:'<span></span>'}<span class="meta">상담 ${st.n}건${st.last?` · 마지막 ${kd(st.last)}`:''}${st.due?` · <b class="${late?'bad':''}" style="${late?'':'color:#b0541f'}">다시 볼 날 ${late?'지남':isT?'오늘':kd(st.due)}</b>`:''}</span></div>`; }).join('')||'<div class="empty">찾는 농가가 없습니다.</div>'}</div>`:'<div class="empty">아직 농가가 없습니다.<br>상담을 적으면서 [농가 고르기]로 만들거나, [+ 농가]로 먼저 만들어 두세요.</div>'; }
+function drawFarmsBody(){ const pg=q('#page-farms'); const b=q('#fbody',pg); if(!b){ drawFarms(); return; } b.innerHTML=farmsBodyHTML(); const x=q('#fqx',pg); if(x) x.hidden=!FV.q; }
+function drawFarms(){ const pg=q('#page-farms');
+  if(q('#fbody',pg)&&document.activeElement&&document.activeElement.id==='fq'){ drawFarmsBody(); return; }
   pg.innerHTML=`<div class="lede">농가</div><div class="lede-sub">상담했던 농가가 모입니다. 누르면 그 농가의 상담 이력이 보여요.</div>
-    <div class="srch"><input id="fq" placeholder="이름 · 마을 · 작목으로 찾기" value="${E(FV.q)}" autocomplete="off">${FV.q?'<button type="button" class="btn" id="fqx">지우기</button>':''}</div>
+    <div class="srch"><input id="fq" placeholder="이름 · 마을 · 작목으로 찾기" value="${E(FV.q)}" autocomplete="off"><button type="button" class="btn" id="fqx" ${FV.q?'':'hidden'}>지우기</button></div>
     <button type="button" class="fab phoneonly" id="newF">+ 농가</button>
-    ${DB.farms.length?`<div class="nlist">${L.map(f=>{ const st=farmStat(f); const late=st.due&&st.due<today(), isT=st.due===today(); return `<div class="frow ${f.id===sel?'sel':''}" data-farm="${f.id}"><span class="nm">${E(f.name)}<small>${[f.addr,f.crop].filter(Boolean).map(E).join(' · ')}</small></span>${f.tel?`<a class="callbtn" href="tel:${E(f.tel.replace(/[^0-9+]/g,''))}" data-call>📞 전화</a>`:'<span></span>'}<span class="meta">상담 ${st.n}건${st.last?` · 마지막 ${kd(st.last)}`:''}${st.due?` · <b class="${late?'bad':''}" style="${late?'':'color:#b0541f'}">다시 볼 날 ${late?'지남':isT?'오늘':kd(st.due)}</b>`:''}</span></div>`; }).join('')||'<div class="empty">찾는 농가가 없습니다.</div>'}</div>`:'<div class="empty">아직 농가가 없습니다.<br>상담을 적으면서 [농가 고르기]로 만들거나, [+ 농가]로 먼저 만들어 두세요.</div>'}`;
-  if(isPC()){ const fab=q('#newF',pg); fab.classList.remove('phoneonly'); pg.insertBefore(fab,pg.querySelector('.nlist')||null); }
-  if(focusQ){ const i=q('#fq',pg); i.focus(); try{ i.setSelectionRange(i.value.length,i.value.length); }catch(e){} } }
-q('#page-farms').addEventListener('input',e=>{ if(e.target.id==='fq'){ FV.q=e.target.value; clearTimeout(window.__fq); window.__fq=setTimeout(drawFarms,180); } });
-q('#page-farms').addEventListener('click',e=>{ const t=e.target; if(t.closest('[data-call]')) return; if(t.id==='fqx'){ FV.q=''; drawFarms(); return; } if(t.id==='newF'){ newFarm(); return; } const fr=t.closest('[data-farm]'); if(fr) go('farm',fr.dataset.farm); });
+    <div id="fbody">${farmsBodyHTML()}</div>`;
+  if(isPC()){ const fab=q('#newF',pg); fab.classList.remove('phoneonly'); pg.insertBefore(fab,q('#fbody',pg)); } }
+q('#page-farms').addEventListener('input',e=>{ if(e.target.id==='fq'){ FV.q=e.target.value; clearTimeout(window.__fq); window.__fq=setTimeout(drawFarmsBody,150); } });
+q('#page-farms').addEventListener('click',e=>{ const t=e.target; if(t.closest('[data-call]')) return; if(t.id==='fqx'){ FV.q=''; const i=q('#fq'); if(i) i.value=''; drawFarmsBody(); return; } if(t.id==='newF'){ newFarm(); return; } const fr=t.closest('[data-farm]'); if(fr) go('farm',fr.dataset.farm); });
 function newFarm(){ modal(`<h1>새 농가</h1><label class="fld">이름<input id="nf-name" maxlength="60"></label><label class="fld">전화번호<input id="nf-tel" inputmode="tel" maxlength="40" placeholder="전화번호"></label><label class="fld">마을 · 주소<input id="nf-addr" maxlength="200" placeholder="예: 흥천면 효지리"></label><label class="fld">주로 짓는 작목<input id="nf-crop" maxlength="100" placeholder="예: 배, 고추"></label><label class="fld">농가 메모<textarea id="nf-memo" placeholder="예: 과원 동쪽 배수 안 좋음, 저온저장고 있음"></textarea></label>
     <div class="acts"><button type="button" class="btn primary" id="nf-save">만들기</button><button type="button" class="btn" data-close>취소</button></div>`,{onOpen:w=>q('#nf-name',w).focus()});
   q('#modal').onclick=e=>{ if(e.target.id==='nf-save'){ const w=q('#modal'); const name=q('#nf-name',w).value.trim(); if(!name){ q('#nf-name',w).focus(); return; } const f=mkFarm({name,tel:q('#nf-tel',w).value.trim(),addr:q('#nf-addr',w).value.trim(),crop:q('#nf-crop',w).value.trim(),memo:q('#nf-memo',w).value.trim()}); DB.farms.push(f); save(); closeModal(); go('farm',f.id); } }; }
