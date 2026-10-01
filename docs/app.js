@@ -14,6 +14,8 @@ const E=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>
 const CR=globalThis.ISDCRYPT, ST=window.STORE;
 const inApp=!!(window.SangdamApp&&typeof SangdamApp.version==='function');
 const ROLE=inApp?'phone':'pc';                              /* apk 안이면 핸드폰, 브라우저면 PC */
+const FLAVOR=(inApp&&typeof SangdamApp.flavor==='function')?String(SangdamApp.flavor()||''):'';   /* 아이콘 맛(apple·chamoe …) — 잠금 화면 그림을 앱 아이콘과 맞춤 */
+const ICON=(FLAVOR&&FLAVOR!=='apple')?`icon-${FLAVOR}-192.png`:'icon-192.png';
 const isPC=()=>window.matchMedia('(min-width: 900px)').matches;
 const iso=()=>new Date().toISOString();
 const pad=n=>String(n).padStart(2,'0');
@@ -295,11 +297,11 @@ function hexToBytes(h){ const u=new Uint8Array(h.length/2); for(let i=0;i<u.leng
 async function verifyPw(pw){ if(!AUTH) return false; const r=await pwHash(pw,AUTH.salt); return r.hash===AUTH.hash; }
 let LOCKED=true, HIDDEN_AT=0;
 function showLock(mode,msg){ const w=q('#lock'); LOCKED=true; w.hidden=false;
-  if(mode==='first') w.innerHTML=`<form class="lockbox" id="lockForm" autocomplete="off" novalidate><h1><img src="icon-192.png" alt="">상담 수첩<small>여주시농업기술센터 · 현장 상담 기록</small></h1>
+  if(mode==='first') w.innerHTML=`<form class="lockbox" id="lockForm" autocomplete="off" novalidate><h1><img src="${ICON}" onerror="this.onerror=null;this.src='icon-192.png'" alt="">상담 수첩<small>여주시농업기술센터 · 현장 상담 기록</small></h1>
       <p class="desc">처음 한 번만 이름과 비밀번호를 정합니다. 수첩은 이 ${ROLE==='phone'?'핸드폰':'PC 브라우저'} 안에만 저장되고, 열 때마다 비밀번호를 넣습니다. <b>비밀번호는 되찾을 수 없으니</b> 잊지 않을 것으로.</p>
       <label class="fld">이름<input id="lk-name" maxlength="20" placeholder="예: 홍길동"></label><label class="fld">비밀번호 (${PW_MIN}글자 이상)<input id="lk-pw" type="password"></label><label class="fld">비밀번호 한 번 더<input id="lk-pw2" type="password"></label>
       <div class="msg bad" id="lk-msg">${E(msg||'')}</div><button class="btn primary block" type="submit">시작하기</button></form>`;
-  else w.innerHTML=`<form class="lockbox" id="lockForm" autocomplete="off" novalidate><h1><img src="icon-192.png" alt="">상담 수첩<small>${E(ME.name||'')}</small></h1>
+  else w.innerHTML=`<form class="lockbox" id="lockForm" autocomplete="off" novalidate><h1><img src="${ICON}" onerror="this.onerror=null;this.src='icon-192.png'" alt="">상담 수첩<small>${E(ME.name||'')}</small></h1>
       <label class="fld">비밀번호<input id="lk-pw" type="password" autofocus></label><div class="msg bad" id="lk-msg">${E(msg||'')}</div><button class="btn primary block" type="submit">열기</button>
       <button type="button" class="lgback" id="lk-forgot">비밀번호를 잊었어요</button></form>`;
   setTimeout(()=>{ const i=q(mode==='first'?'#lk-name':'#lk-pw',w); if(i) i.focus(); },50);
@@ -321,7 +323,7 @@ async function boot(){ try{ AUTH=await ST.kvGet('auth'); ME=(await ST.kvGet('me'
   q('#pbar').hidden=true; if(!AUTH) showLock('first'); else showLock('unlock');
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} } }
 if(!window.$) window.$=s=>document.querySelector(s);   /* 시험·디버그 편의 */
-window.APP={VER:APP_VER,ROLE,inApp,goBack,get DB(){ return DB; },get SY(){ return SY; },set SY(v){ SY=v; },get ME(){ return ME; },get VIEW(){ return VIEW; },normDB,normSY,mkFarm,mkConsult,mkPhoto,mkRef,save,saveNow,render,go,toast,modal,closeModal,fmtT,iso,today,uid,E,q,qa,isPC,farmOf,consultOf,photoOf,photosOf,isEnd,tagOf,touch,deleteConsult,deletePhoto,shrink,thumbURL,fullURL,forgetURL,
+window.APP={VER:APP_VER,ROLE,inApp,FLAVOR,ICON,goBack,get DB(){ return DB; },get SY(){ return SY; },set SY(v){ SY=v; },get ME(){ return ME; },get VIEW(){ return VIEW; },normDB,normSY,mkFarm,mkConsult,mkPhoto,mkRef,save,saveNow,render,go,toast,modal,closeModal,fmtT,iso,today,uid,E,q,qa,isPC,farmOf,consultOf,photoOf,photosOf,isEnd,tagOf,touch,deleteConsult,deletePhoto,shrink,thumbURL,fullURL,forgetURL,
   idle:()=>Date.now()-LAST_INPUT>=20000,typing:()=>Date.now()-LAST_INPUT<20000,_touch:t=>{ LAST_INPUT=t==null?Date.now():t; },locked:()=>LOCKED,verifyPw,
   busyUI:()=>!q('#modal').hidden||!q('#viewer').hidden||!q('#sheet').hidden||LOCKED||FEDIT,
   photoRecord:id=>ST.fileGet(id),putPhoto:async(p,blob)=>{ const th=/^image\//.test(p.type)?await shrink(blob,260,0.8):null; await ST.filePut({id:p.id,blob,thumb:th?th.blob:null}); },
