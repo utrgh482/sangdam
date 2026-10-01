@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>상담 수첩</title>
+<meta name="theme-color" content="#98CCE6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-64.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="app.css?v=1">
+</head>
+<body>
+<!-- 상담 수첩 v1 (2026-10-01) — 여주시농업기술센터 현장 상담 기록. 자료는 이 기기 안에만 있습니다. -->
+<header class="top"><div class="inner">
+  <div class="brand"><small>여주시농업기술센터</small>상담 수첩</div>
+  <nav class="ptabs" id="ptabs">
+    <button type="button" data-tab="list">상담</button><button type="button" data-tab="farms">농가</button><button type="button" data-tab="photos">사진</button><button type="button" data-tab="sync">PC와 핸드폰 맞추기</button><button type="button" data-tab="tags">태그</button>
+  </nav>
+  <div class="who"><span class="dot" id="syncDot" title="맞추기 상태"></span><span class="nm" id="meName"></span><button type="button" class="btn sm ghost" id="pcMore" title="더보기">⋯</button></div>
+</div></header>
+
+<main class="wrap" id="wrap">
+  <div class="colL">
+    <section class="page" id="page-list"></section>
+    <section class="page" id="page-farms"></section>
+    <section class="page" id="page-photos"></section>
+  </div>
+  <div class="colR">
+    <section class="page" id="page-detail"></section>
+    <section class="page" id="page-farm"></section>
+    <section class="page" id="page-sync"></section>
+    <section class="page" id="page-tags"></section>
+    <div class="rhint" id="rhint" hidden>왼쪽에서 상담이나 농가를 고르면 여기에 열립니다.</div>
+  </div>
+</main>
+
+<nav class="pbar" id="pbar">
+  <button type="button" data-tab="list"><span class="ico list"></span>상담</button>
+  <button type="button" data-tab="farms"><span class="ico farms"></span>농가</button>
+  <button type="button" data-tab="photos"><span class="ico photos"></span>사진</button>
+  <button type="button" data-tab="more"><span class="ico more"></span>더보기</button>
+</nav>
+
+<div class="sheet" id="sheet" hidden><div class="scrim"></div><div class="box"><div class="handle"></div><div class="list" id="sheetList"></div><div class="foot"><span id="sheetWho"></span><button type="button" class="lnk" id="sheetName">이름 바꾸기</button><span class="ver" id="sheetVer"></span></div></div></div>
+
+<div class="viewer" id="viewer" hidden>
+  <div class="vtop"><b id="vcap"></b><button type="button" class="vbtn danger" id="vdel">지우기</button><button type="button" class="vbtn" id="vclose">닫기</button></div>
+  <div class="vstage" id="vstage"><img id="vimg" alt=""></div>
+  <div class="vnav"><button type="button" class="vbtn" id="vprev">‹ 이전</button><span id="vpos"></span><button type="button" class="vbtn" id="vnext">다음 ›</button></div>
+</div>
+
+<div class="lock" id="lock" hidden></div>
+<div class="modalWrap" id="modal" hidden></div>
+<input type="file" id="pick" accept="image/*" multiple hidden>
+<input type="file" id="pickFile" accept=".zip,.isd,application/zip,application/octet-stream,*/*" hidden>
+
+<script src="crypt.js?v=1"></script>
+<script src="store.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="sync.js?v=1"></script>
+</body>
+</html>

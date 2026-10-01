@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sky">#98CCE6</color>
+    <color name="ink">#16435A</color>
+    <color name="white">#FFFFFF</color>
+    <color name="cream">#FBF4E3</color>   <!-- 앱 아이콘 바탕 -->
+</resources>
