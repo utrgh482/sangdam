@@ -235,6 +235,9 @@ public class MainActivity extends Activity {
         /** 앱 판 번호 — 페이지가 "앱 안에서 열렸는지" 알아볼 때 */
         @JavascriptInterface
         public String version() { return BuildConfig.VERSION_NAME; }
+        /** 아이콘 맛(apple·chamoe …) — 페이지가 잠금 화면 그림을 맞출 때 */
+        @JavascriptInterface
+        public String flavor() { return BuildConfig.FLAVOR; }
     }
 
     /* ---------- 인터넷 안 될 때 ---------- */

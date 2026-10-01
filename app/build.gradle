@@ -22,6 +22,12 @@ android {
         buildConfigField 'String', 'HOME_URL', '"https://utrgh482.github.io/sangdam/"'
     }
     buildFeatures { buildConfig true }
+    // 아이콘만 다른 apk 를 사람 수만큼 — "맛"(flavor). 새 사람 = 여기 한 줄 + app/src/<맛>/res/mipmap-* 아이콘 (icon/make_icon.py 가 만듦)
+    flavorDimensions = ['icon']
+    productFlavors {
+        apple  { dimension 'icon'; buildConfigField 'String', 'FLAVOR_LABEL', '"사과"' }    // 기본 아이콘(main 의 res)
+        chamoe { dimension 'icon'; buildConfigField 'String', 'FLAVOR_LABEL', '"참외"' }    // app/src/chamoe/res 가 아이콘을 덮어씀
+    }
     signingConfigs {
         release {
             if (ksFile && ksPass) {
