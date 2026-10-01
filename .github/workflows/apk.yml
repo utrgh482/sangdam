@@ -1,5 +1,5 @@
-# 이사돔 apk 자동 만들기 — app/ 이 바뀌어 main 에 올라오면(또는 Actions 탭에서 Run workflow) 돌아갑니다.
-# 결과: Releases 에 isadom.apk 가 붙습니다. 도장은 저장소 비밀 칸(KEYSTORE_B64 · KEYSTORE_PASSWORD)에서 꺼내 씁니다.
+# 상담 수첩 apk 자동 만들기 — app/ 이 바뀌어 main 에 올라오면(또는 Actions 탭에서 Run workflow) 돌아갑니다.
+# 결과: Releases 에 아이콘별 apk(sangdam-apple.apk · sangdam-chamoe.apk …)가 붙습니다. 도장은 저장소 비밀 칸(KEYSTORE_B64 · KEYSTORE_PASSWORD)에서 꺼내 씁니다.
 name: apk
 
 on:
@@ -50,18 +50,29 @@ jobs:
         run: |
           if [ -z "$KEYSTORE_PASSWORD" ]; then echo "::error::비밀 칸 KEYSTORE_PASSWORD 가 비어 있습니다"; exit 1; fi
           gradle assembleRelease --no-daemon --warning-mode none
-          ls -l app/build/outputs/apk/release/
-          cp app/build/outputs/apk/release/app-release.apk isadom.apk
+          ls -lR app/build/outputs/apk/
+          # 맛(아이콘)마다 apk 하나씩 — app-apple-release.apk → sangdam-apple.apk 처럼 이름을 바꿔 모읍니다
+          shopt -s nullglob
+          mkdir -p out
+          for f in app/build/outputs/apk/*/release/*.apk; do
+            fl=$(basename "$f" .apk); fl=${fl#app-}; fl=${fl%-release}; fl=${fl%-release-unsigned}
+            cp "$f" "out/sangdam-$fl.apk"
+          done
+          ls -l out/
+          if [ -z "$(ls out/*.apk 2>/dev/null)" ]; then echo "::error::만들어진 apk 가 없습니다 (위의 ls 결과를 봐 주세요)"; exit 1; fi
 
       - name: 만든 apk 보관 (Actions 화면에서도 내려받기)
         uses: actions/upload-artifact@v4
         with:
-          name: isadom-apk-${{ github.run_number }}
-          path: isadom.apk
+          name: sangdam-apk-${{ github.run_number }}-${{ github.run_attempt }}
+          path: out/*.apk
+          overwrite: true
 
       - name: Releases 에 올리기
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${{ github.run_number }}"
-          gh release create "$TAG" isadom.apk --title "이사돔 apk $TAG" --notes "핸드폰에서 isadom.apk 를 눌러 내려받아 설치하세요. (빌드 번호 ${{ github.run_number }})"
+          NOTES="아이콘별 apk — sangdam-apple.apk = 사과, sangdam-chamoe.apk = 참외. 핸드폰에서 자기 것을 눌러 내려받아 설치하세요. (빌드 번호 ${{ github.run_number }})"
+          # 같은 번호로 다시 돌렸을 때(재실행)는 이미 있는 Releases 에 파일만 바꿔 넣습니다
+          if gh release view "$TAG" >/dev/null 2>&1; then gh release upload "$TAG" out/*.apk --clobber; else gh release create "$TAG" out/*.apk --title "상담 수첩 apk $TAG" --notes "$NOTES"; fi
